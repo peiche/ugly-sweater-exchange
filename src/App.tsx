@@ -174,9 +174,10 @@ export default function App() {
       const ex = await findExchangeByCode(joinCode);
       if (!ex) throw new Error('No exchange found with that join code. Double-check the code and try again.');
       const existing = await listParticipants(ex.$id);
-      if (existing.some((p) => p.userId === userId)) {
+      const alreadyJoined = existing.find((p) => p.userId === userId);
+      if (alreadyJoined) {
         setExchange(ex);
-        setNotice('Welcome back — you already joined this exchange.');
+        setNotice(`This device already joined as ${alreadyJoined.name}. Each person joins from their own phone or browser — to join as someone else, open the invite link on their device.`);
         return;
       }
       if (ex.drawn) throw new Error('The names have already been drawn for this exchange, so new people cannot join.');
