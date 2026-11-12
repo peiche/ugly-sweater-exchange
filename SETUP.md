@@ -113,8 +113,10 @@ are assignments, and those are locked to one user each.
 In the Appwrite console, under the same project:
 
 1. **Create an API key** (Overview → Integrations → API Keys, or Settings →
-   API Keys): name it e.g. `ugly-sweater-draw`, scopes **databases read** and
-   **databases write** only. Copy the key — it is shown once.
+   API Keys): name it e.g. `ugly-sweater-draw`, scopes **documents read** and
+   **documents write** (the function only does document operations — the
+   `databases` scopes alone are *not* enough and the draw fails with
+   `missing scopes (["documents.read"])`). Copy the key — it is shown once.
 2. **Create the function** (Functions → Create function): name
    `ugly-sweater-draw`, runtime **Node 22** (Node 20 was not offered in the
    console as of 2026-11-12; the code needs nothing version-specific),
