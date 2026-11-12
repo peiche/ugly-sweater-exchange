@@ -133,6 +133,14 @@ export default function App() {
     setNotice('');
   }
 
+  /** Accept a bare 6-char code OR a full invite link pasted into the join field. */
+  function parseJoinCodeInput(raw: string): string {
+    const trimmed = raw.trim();
+    const urlMatch = trimmed.match(/[?&]code=([A-Za-z0-9]{1,6})/);
+    if (urlMatch) return urlMatch[1].toUpperCase();
+    return trimmed.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!userId) return;
@@ -339,7 +347,7 @@ export default function App() {
               <form onSubmit={handleJoin} className="form">
                 <label>
                   Join code
-                  <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder="e.g. K7M2QX" required maxLength={6} className="code-input" />
+                  <input value={joinCode} onChange={(e) => setJoinCode(parseJoinCodeInput(e.target.value))} placeholder="e.g. K7M2QX (or paste the full invite link)" required className="code-input" />
                 </label>
                 <label>
                   Your name
@@ -373,6 +381,14 @@ export default function App() {
               </p>
               <div className="join-box">
                 <span>Join code: <code className="code">{exchange.joinCode}</code></span>
+                <button
+                  className="btn small"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(exchange.joinCode).then(() => setNotice(`Join code ${exchange.joinCode} copied!`));
+                  }}
+                >
+                  Copy code
+                </button>
                 <button
                   className="btn small"
                   onClick={() => {
