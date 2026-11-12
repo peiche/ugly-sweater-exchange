@@ -70,6 +70,13 @@ function Confetti() {
   );
 }
 
+/** Read a join code from the current URL: /exchange/ABC123, or ?code=ABC123. */
+function codeFromLocation(): string {
+  const pathMatch = window.location.pathname.match(/^\/exchange\/([A-Za-z0-9]{1,6})/i);
+  if (pathMatch) return pathMatch[1].toUpperCase();
+  return new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '';
+}
+
 export default function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState('');
@@ -82,10 +89,8 @@ export default function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  // Join with a code from a shared link: ?code=ABC123
-  const [joinCode, setJoinCode] = useState(
-    () => new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '',
-  );
+  // Join with a code from a shared link: /exchange/ABC123 (or the older ?code=ABC123)
+  const [joinCode, setJoinCode] = useState(() => codeFromLocation());
   const [joinName, setJoinName] = useState('');
   const [createName, setCreateName] = useState('');
   const [organizerName, setOrganizerName] = useState('');
@@ -99,13 +104,12 @@ export default function App() {
       .catch(() => setSessionError('Could not start an anonymous session. Check your Appwrite setup and try again.'));
   }, []);
 
-  // Reopen the exchange directly: a ?code= link goes straight to the exchange
-  // page, and the last exchange code is remembered on this device so a
+  // Reopen the exchange directly: an /exchange/CODE link goes straight to the
+  // exchange page, and the last exchange code is remembered on this device so a
   // refresh (or coming back later) lands back on it instead of the home page.
   useEffect(() => {
     if (!isConfigured || !userId) return;
-    const urlCode = new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '';
-    const code = urlCode || window.localStorage.getItem('ugly-sweater-exchange-code') || '';
+    const code = codeFromLocation() || window.localStorage.getItem('ugly-sweater-exchange-code') || '';
     if (!code) return;
     setJoinCode(code);
     findExchangeByCode(code)
@@ -119,16 +123,12 @@ export default function App() {
   useEffect(() => {
     if (!exchange) return;
     window.localStorage.setItem('ugly-sweater-exchange-code', exchange.joinCode);
-    const url = new URL(window.location.href);
-    url.searchParams.set('code', exchange.joinCode);
-    window.history.replaceState(null, '', url);
+    window.history.replaceState(null, '', `/exchange/${exchange.joinCode}`);
   }, [exchange]);
 
   function leaveExchange() {
     window.localStorage.removeItem('ugly-sweater-exchange-code');
-    const url = new URL(window.location.href);
-    url.searchParams.delete('code');
-    window.history.replaceState(null, '', url);
+    window.history.replaceState(null, '', '/');
     setExchange(null);
     setParticipants([]);
     setMyParticipant(null);
@@ -164,7 +164,7 @@ export default function App() {
   const isOrganizer = exchange !== null && userId !== null && exchange.organizerUserId === userId;
   const shareUrl =
     exchange !== null
-      ? `${window.location.origin}${window.location.pathname}?code=${exchange.joinCode}`
+      ? `${window.location.origin}/exchange/${exchange.joinCode}`
       : '';
 
   function clearMessages() {
@@ -175,7 +175,9 @@ export default function App() {
   /** Accept a bare 6-char code OR a full invite link pasted into the join field. */
   function parseJoinCodeInput(raw: string): string {
     const trimmed = raw.trim();
-    const urlMatch = trimmed.match(/[?&]code=([A-Za-z0-9]{1,6})/);
+    const urlMatch =
+      trimmed.match(/[?&]code=([A-Za-z0-9]{1,6})/) ??
+      trimmed.match(/\/exchange\/([A-Za-z0-9]{1,6})/i);
     if (urlMatch) return urlMatch[1].toUpperCase();
     return trimmed.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
   }
