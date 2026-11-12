@@ -8,7 +8,7 @@ and into Netlify's environment variables (for the deployed site).
 
 1. Appwrite Console → **Create project** → name it e.g. `Ugly Sweater Exchange`.
 2. Copy the **Project ID** → `VITE_APPWRITE_PROJECT_ID`.
-3. Note the endpoint. For Appwrite Cloud it is `https://cloud.appwrite.io/v1`
+3. Note the endpoint. For Appwrite Cloud it depends on your project's region — this project (CCI) uses the Frankfurt endpoint `https://fra.cloud.appwrite.io/v1`
    → `VITE_APPWRITE_ENDPOINT`. (If you self-host Appwrite, use your own URL.)
 
 ## 2. Enable anonymous auth
@@ -96,7 +96,7 @@ are assignments, and those are locked to one user each.
 Copy `.env.example` to `.env` and fill in:
 
 ```bash
-VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+VITE_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
 VITE_APPWRITE_PROJECT_ID=<project ID from step 1>
 VITE_APPWRITE_DATABASE_ID=<database ID from step 3>
 VITE_APPWRITE_EXCHANGES_COLLECTION_ID=exchanges

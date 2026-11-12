@@ -71,7 +71,7 @@ build time — that's why you must redeploy after changing them):
 
 | Variable | What it is |
 | --- | --- |
-| `VITE_APPWRITE_ENDPOINT` | Appwrite endpoint, e.g. `https://cloud.appwrite.io/v1` |
+| `VITE_APPWRITE_ENDPOINT` | Appwrite endpoint, e.g. `https://fra.cloud.appwrite.io/v1` (this project's Frankfurt endpoint) |
 | `VITE_APPWRITE_PROJECT_ID` | Appwrite project ID |
 | `VITE_APPWRITE_DATABASE_ID` | Database ID |
 | `VITE_APPWRITE_EXCHANGES_COLLECTION_ID` | `exchanges` collection ID |
