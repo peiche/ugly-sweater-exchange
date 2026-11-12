@@ -118,9 +118,14 @@ In the Appwrite console, under the same project:
 2. **Create the function** (Functions → Create function): name
    `ugly-sweater-draw`, runtime **Node 22** (Node 20 was not offered in the
    console as of 2026-11-12; the code needs nothing version-specific),
-   entrypoint `src/main.js`. Upload the contents of `functions/draw/` as the deployment
-   (the console installs dependencies from `package.json` during the build).
+   entrypoint `src/main.js`. Upload the deployment archive as described below.
    The function ID is shown on the function page — copy it.
+   **Dependencies:** the console does *not* install `package.json`
+   dependencies for a manual upload — a deployment without `node_modules`
+   fails at startup with `Cannot find module 'node-appwrite'` (seen
+   2026-11-12). Before uploading, run `npm install --omit=dev` inside
+   `functions/draw/` and include `node_modules/` in the archive. (`node_modules`
+   is gitignored; it lives only in the upload, never in the repo.)
 3. **Set the function's variables** (Function → Settings → Variables):
    `APPWRITE_API_KEY` = the key from step 1 (mark it secret),
    `APPWRITE_DATABASE_ID` = the database ID from step 3 above. The table IDs
