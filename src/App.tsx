@@ -85,6 +85,12 @@ export default function App() {
   const [myParticipant, setMyParticipant] = useState<Participant | null>(null);
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [assignmentChecked, setAssignmentChecked] = useState(false);
+  // True while the app is still trying to reopen an exchange from the URL or
+  // this device's remembered code — the home page stays hidden until then, so
+  // a direct exchange link doesn't flash the home page first.
+  const [restoring, setRestoring] = useState(
+    () => Boolean(codeFromLocation() || window.localStorage.getItem('ugly-sweater-exchange-code')),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -110,13 +116,17 @@ export default function App() {
   useEffect(() => {
     if (!isConfigured || !userId) return;
     const code = codeFromLocation() || window.localStorage.getItem('ugly-sweater-exchange-code') || '';
-    if (!code) return;
+    if (!code) {
+      setRestoring(false);
+      return;
+    }
     setJoinCode(code);
     findExchangeByCode(code)
       .then((ex) => {
         if (ex) setExchange(ex);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setRestoring(false));
   }, [userId]);
 
   // Keep the code in the URL and remembered on this device while viewing an exchange.
@@ -355,7 +365,11 @@ export default function App() {
         {error && <section className="card error" role="alert">{error}</section>}
         {notice && <section className="card notice" role="status">{notice}</section>}
 
-        {isConfigured && userId && !exchange && (
+        {isConfigured && userId && restoring && (
+          <section className="card"><p>Loading your exchange… ⛄</p></section>
+        )}
+
+        {isConfigured && userId && !exchange && !restoring && (
           <>
             <section className="card">
               <h2>🎄 Start a new exchange</h2>
