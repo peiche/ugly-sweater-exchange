@@ -325,6 +325,9 @@ export default function App() {
     try {
       await markViewed(myParticipant.$id);
       setMyParticipant({ ...myParticipant, hasViewed: true });
+      // Refresh the "Who's in" list too, so your own "saw their match" check
+      // shows up right away instead of only after a page reload.
+      await refresh(exchange, userId!);
     } catch (err) {
       setError(`Could not mark your match as viewed: ${err instanceof Error ? err.message : 'unknown error'}`);
     } finally {
