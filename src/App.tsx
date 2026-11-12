@@ -534,9 +534,12 @@ export default function App() {
                 <h2>Organizer controls</h2>
                 {!exchange.drawn ? (
                   <>
-                    <button className="btn primary" onClick={handleDraw} disabled={busy || participants.length < 3}>
-                      {busy ? 'Drawing…' : `Draw the names! (${participants.length} in)`}
-                    </button>
+                    <div className="row">
+                      <button className="btn primary" onClick={handleDraw} disabled={busy || participants.length < 3}>
+                        {busy ? 'Drawing…' : `Draw the names! (${participants.length} in)`}
+                      </button>
+                      <button className="btn danger" onClick={handleDeleteExchange} disabled={busy}>Delete exchange</button>
+                    </div>
                     {participants.length < 3 && <p className="muted">You need at least 3 people to draw names.</p>}
                   </>
                 ) : (
@@ -548,25 +551,9 @@ export default function App() {
                     </div>
                   </>
                 )}
-                {!exchange.drawn && (
-                  <button className="btn danger" onClick={handleDeleteExchange} disabled={busy}>Delete exchange</button>
-                )}
               </section>
             )}
 
-            <button
-              className="btn linklike"
-              onClick={() => {
-                setExchange(null);
-                setParticipants([]);
-                setMyParticipant(null);
-                setAssignment(null);
-                setAssignmentChecked(false);
-                clearMessages();
-              }}
-            >
-              ← Back to start
-            </button>
           </>
         )}
       </main>
