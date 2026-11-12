@@ -123,7 +123,16 @@ export default function App() {
     setJoinCode(code);
     findExchangeByCode(code)
       .then((ex) => {
-        if (ex) setExchange(ex);
+        if (ex) {
+          setExchange(ex);
+        } else {
+          // The link points at an exchange that no longer exists (deleted, or
+          // a mistyped code): forget it and go back to the home page instead
+          // of sitting on a dead /exchange/CODE URL.
+          window.localStorage.removeItem('ugly-sweater-exchange-code');
+          window.history.replaceState(null, '', '/');
+          setNotice("That exchange doesn't exist anymore — it may have been deleted.");
+        }
       })
       .catch(() => {})
       .finally(() => setRestoring(false));
@@ -293,10 +302,7 @@ export default function App() {
     setBusy(true);
     try {
       await deleteExchange(exchange);
-      setExchange(null);
-      setParticipants([]);
-      setMyParticipant(null);
-      setAssignment(null);
+      leaveExchange();
       setNotice('Exchange deleted.');
     } catch (err) {
       setError(`Could not delete the exchange: ${err instanceof Error ? err.message : 'unknown error'}`);
