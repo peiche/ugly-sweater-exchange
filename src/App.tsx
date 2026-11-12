@@ -99,6 +99,45 @@ export default function App() {
       .catch(() => setSessionError('Could not start an anonymous session. Check your Appwrite setup and try again.'));
   }, []);
 
+  // Reopen the exchange directly: a ?code= link goes straight to the exchange
+  // page, and the last exchange code is remembered on this device so a
+  // refresh (or coming back later) lands back on it instead of the home page.
+  useEffect(() => {
+    if (!isConfigured || !userId) return;
+    const urlCode = new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '';
+    const code = urlCode || window.localStorage.getItem('ugly-sweater-exchange-code') || '';
+    if (!code) return;
+    setJoinCode(code);
+    findExchangeByCode(code)
+      .then((ex) => {
+        if (ex) setExchange(ex);
+      })
+      .catch(() => {});
+  }, [userId]);
+
+  // Keep the code in the URL and remembered on this device while viewing an exchange.
+  useEffect(() => {
+    if (!exchange) return;
+    window.localStorage.setItem('ugly-sweater-exchange-code', exchange.joinCode);
+    const url = new URL(window.location.href);
+    url.searchParams.set('code', exchange.joinCode);
+    window.history.replaceState(null, '', url);
+  }, [exchange]);
+
+  function leaveExchange() {
+    window.localStorage.removeItem('ugly-sweater-exchange-code');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('code');
+    window.history.replaceState(null, '', url);
+    setExchange(null);
+    setParticipants([]);
+    setMyParticipant(null);
+    setAssignment(null);
+    setAssignmentChecked(false);
+    setJoinCode('');
+    clearMessages();
+  }
+
   const refresh = useCallback(
     async (ex: Exchange, uid: string) => {
       const list = await listParticipants(ex.$id);
@@ -402,6 +441,11 @@ export default function App() {
               {isOrganizer && !exchange.drawn && (
                 <p className="muted">Share the code or invite link, wait for everyone to join, then draw names below.</p>
               )}
+              <p>
+                <button className="btn small" onClick={leaveExchange}>
+                  ← Back to start
+                </button>
+              </p>
             </section>
 
             {exchange.drawn && myParticipant && (
