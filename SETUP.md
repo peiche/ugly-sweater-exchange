@@ -80,6 +80,13 @@ configure them by hand, but this is what to expect (and what makes the secret
 work). Collection-level permissions should be left at their defaults with
 document-level permissions enabled.
 
+**One table-level permission you *do* need to set by hand:** on each of the
+three tables, grant **Create** to the **All users** role (Security settings).
+Appwrite only allows the Create permission at table level, not per document —
+without it, anonymous users get `No permissions provided for action 'create'`
+when the app tries to create a row. Leave Read, Update and Delete unchecked
+at table level; those are governed by the per-document permissions below.
+
 | Document | Permissions the app sets |
 | --- | --- |
 | **Exchange** | `read: any`, `update: user(organizer)`, `delete: user(organizer)` |
