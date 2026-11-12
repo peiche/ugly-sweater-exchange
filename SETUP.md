@@ -98,7 +98,41 @@ exchange by its join code and see the "who's in" list. Those documents contain
 no match information, so this is safe. The only documents that contain a match
 are assignments, and those are locked to one user each.
 
-## 6. Wire up the env vars
+> **Why assignments are written by a function, not the browser:** from a
+> browser, Appwrite only lets a user grant document permissions to roles they
+> own — `any`, all users, their own user ID, or teams they belong to. It
+> cannot grant read access to *another* user, so a browser-side draw fails
+> with `Permissions must be one of: (any, users, user:<own ID>, …)`. The draw
+> function (`functions/draw`, Node 20, `node-appwrite`) runs server-side with
+> an API key, which *can* grant each assignment to its assignee. It also
+> handles redraw (reset) and delete-exchange, since the browser can't delete
+> assignments it can't read.
+
+## 6. The draw function
+
+In the Appwrite console, under the same project:
+
+1. **Create an API key** (Overview → Integrations → API Keys, or Settings →
+   API Keys): name it e.g. `ugly-sweater-draw`, scopes **databases read** and
+   **databases write** only. Copy the key — it is shown once.
+2. **Create the function** (Functions → Create function): name
+   `ugly-sweater-draw`, runtime **Node 20** (or newer Node), entrypoint
+   `src/main.js`. Upload the contents of `functions/draw/` as the deployment
+   (the console installs dependencies from `package.json` during the build).
+   The function ID is shown on the function page — copy it.
+3. **Set the function's variables** (Function → Settings → Variables):
+   `APPWRITE_API_KEY` = the key from step 1 (mark it secret),
+   `APPWRITE_DATABASE_ID` = the database ID from step 3 above. The table IDs
+   default to `exchanges` / `participants` / `assignments` and only need
+   variables if they differ.
+4. **Activate the deployment** once the build succeeds, and run a test
+   execution from the console with body
+   `{"action": "draw", "exchangeId": "<an exchange ID>"}` — it should return
+   `{"ok": true, ...}` only when run by the organizer; anyone else gets a
+   403. (The function checks the calling user's ID against the exchange's
+   organizer.)
+
+## 7. Wire up the env vars
 
 Copy `.env.example` to `.env` and fill in:
 
@@ -109,13 +143,14 @@ VITE_APPWRITE_DATABASE_ID=<database ID from step 3>
 VITE_APPWRITE_EXCHANGES_COLLECTION_ID=exchanges
 VITE_APPWRITE_PARTICIPANTS_COLLECTION_ID=participants
 VITE_APPWRITE_ASSIGNMENTS_COLLECTION_ID=assignments
+VITE_APPWRITE_DRAW_FUNCTION_ID=<function ID from step 6>
 ```
 
 Then run `npm run dev` and create a test exchange. Add the **same variables**
 in Netlify under **Site settings → Environment variables** and redeploy —
 Vite bakes them in at build time, so changing them requires a rebuild.
 
-## 7. Sanity checks
+## 8. Sanity checks
 
 - Join the test exchange from a second browser (or a private window) with a
   different name — it should appear in the "Who's in" list.

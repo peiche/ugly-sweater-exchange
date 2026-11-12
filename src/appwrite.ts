@@ -1,4 +1,4 @@
-import { Account, Client, Databases, ID, Permission, Query, Role } from 'appwrite';
+import { Account, Client, Databases, Functions, ID, Permission, Query, Role } from 'appwrite';
 import type { Assignment, Exchange, Participant } from './types';
 
 function env(name: string): string {
@@ -12,6 +12,7 @@ export const config = {
   exchangesCollectionId: env('VITE_APPWRITE_EXCHANGES_COLLECTION_ID'),
   participantsCollectionId: env('VITE_APPWRITE_PARTICIPANTS_COLLECTION_ID'),
   assignmentsCollectionId: env('VITE_APPWRITE_ASSIGNMENTS_COLLECTION_ID'),
+  drawFunctionId: env('VITE_APPWRITE_DRAW_FUNCTION_ID'),
 };
 
 export const isConfigured =
@@ -29,6 +30,7 @@ if (isConfigured) {
 
 export const account = new Account(client);
 export const databases = new Databases(client);
+const functions = new Functions(client);
 
 /** Ensure this device has an anonymous Appwrite session; returns the user ID. */
 export async function ensureAnonymousSession(): Promise<string> {
@@ -49,16 +51,6 @@ export function makeJoinCode(): string {
   crypto.getRandomValues(buf);
   for (let i = 0; i < 6; i++) code += chars[buf[i] % chars.length];
   return code;
-}
-
-function derange<T>(items: T[]): T[] {
-  // Sattolo's algorithm: a single-cycle shuffle, so nobody can draw themselves.
-  const arr = [...items];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * i);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
 }
 
 export async function findExchangeByCode(joinCode: string): Promise<Exchange | null> {
@@ -152,56 +144,26 @@ export async function markViewed(participantId: string): Promise<void> {
 }
 
 /**
- * Run the secret draw. The organizer's browser computes the derangement and
- * writes one assignment document per participant, each readable ONLY by its
- * assignee. The mapping is never stored in app state, never rendered, and is
- * discarded as soon as the documents are written — after this returns, the
- * organizer cannot read the assignments back.
+ * Run the secret draw. The draw itself runs in the Appwrite Function
+ * (functions/draw) — from a browser, Appwrite only lets a user grant document
+ * permissions to roles they own, so the browser cannot grant each assignment
+ * to its assignee. The function runs server-side with an API key, writes one
+ * assignment document per participant (each readable ONLY by its assignee),
+ * and discards the mapping. The organizer cannot read the assignments back.
  */
 export async function runDraw(exchange: Exchange, participants: Participant[]): Promise<void> {
   if (participants.length < 3) {
     throw new Error('You need at least 3 people to draw names.');
   }
-  const receivers = derange(participants);
-  for (let i = 0; i < participants.length; i++) {
-    const giver = participants[i];
-    const receiver = receivers[i];
-    await databases.createDocument<Assignment>(
-      config.databaseId,
-      config.assignmentsCollectionId,
-      ID.unique(),
-      {
-        exchangeId: exchange.$id,
-        giverUserId: giver.userId,
-        giverName: giver.name,
-        receiverUserId: receiver.userId,
-        receiverName: receiver.name,
-      },
-      [
-        // Secrecy lives here: only the assignee's anonymous user ID can read this.
-        Permission.read(Role.user(giver.userId)),
-        // The organizer may delete assignments (for redraw / start over) but
-        // deliberately has NO read permission, so they cannot peek afterwards.
-        Permission.delete(Role.user(exchange.organizerUserId)),
-      ],
-    );
-  }
-  // The local `receivers` array goes out of scope here and is never saved anywhere.
-  await databases.updateDocument(
-    config.databaseId,
-    config.exchangesCollectionId,
-    exchange.$id,
-    { drawn: true },
-  );
+  await callDrawFunction('draw', exchange.$id);
 }
 
-export async function listAssignments(exchangeId: string): Promise<Assignment[]> {
-  const res = await databases.listDocuments<Assignment>(
-    config.databaseId,
-    config.assignmentsCollectionId,
-    [Query.equal('exchangeId', exchangeId), Query.limit(100)],
-  );
-  return res.documents;
+export async function resetDraw(exchangeId: string): Promise<void> {
+  await callDrawFunction('reset', exchangeId);
+}
+
+export async function deleteExchange(exchange: Exchange): Promise<void> {
+  await callDrawFunction('delete', exchange.$id);
 }
 
 /** Returns only this device's assignment — Appwrite permissions hide everyone else's. */
@@ -221,25 +183,28 @@ export async function myAssignment(
   return res.documents[0] ?? null;
 }
 
-export async function deleteAssignments(exchangeId: string): Promise<void> {
-  const docs = await listAssignments(exchangeId);
-  for (const doc of docs) {
-    await databases.deleteDocument(config.databaseId, config.assignmentsCollectionId, doc.$id);
+/** Call the draw function synchronously and surface its error message. */
+async function callDrawFunction(
+  action: 'draw' | 'reset' | 'delete',
+  exchangeId: string,
+): Promise<void> {
+  if (!config.drawFunctionId) {
+    throw new Error(
+      'The draw function is not set up yet (VITE_APPWRITE_DRAW_FUNCTION_ID is missing).',
+    );
   }
-}
-
-export async function resetDraw(exchangeId: string): Promise<void> {
-  await deleteAssignments(exchangeId);
-  await databases.updateDocument(config.databaseId, config.exchangesCollectionId, exchangeId, {
-    drawn: false,
-  });
-}
-
-export async function deleteExchange(exchange: Exchange): Promise<void> {
-  const participants = await listParticipants(exchange.$id);
-  for (const p of participants) {
-    await databases.deleteDocument(config.databaseId, config.participantsCollectionId, p.$id);
+  const execution = await functions.createExecution(
+    config.drawFunctionId,
+    JSON.stringify({ action, exchangeId }),
+    false, // synchronous: wait for the function to finish
+  );
+  let result: { ok?: boolean; error?: string } = {};
+  try {
+    result = JSON.parse(execution.responseBody || '{}') as typeof result;
+  } catch {
+    // Fall through to the status check below.
   }
-  await deleteAssignments(exchange.$id);
-  await databases.deleteDocument(config.databaseId, config.exchangesCollectionId, exchange.$id);
+  if (execution.status !== 'completed' || result.ok !== true) {
+    throw new Error(result.error || `Draw function ${execution.status}: no response.`);
+  }
 }

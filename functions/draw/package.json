@@ -1,0 +1,1 @@
+{"dependencies":{"node-appwrite":"^17.0.0"},"description":"Runs the secret draw for the Ugly Sweater Exchange: writes one assignment document per participant, each readable only by its assignee.","license":"MIT","main":"src/main.js","name":"ugly-sweater-draw","private":true,"version":"1.0.0"}
