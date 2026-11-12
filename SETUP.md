@@ -116,8 +116,9 @@ In the Appwrite console, under the same project:
    API Keys): name it e.g. `ugly-sweater-draw`, scopes **databases read** and
    **databases write** only. Copy the key — it is shown once.
 2. **Create the function** (Functions → Create function): name
-   `ugly-sweater-draw`, runtime **Node 20** (or newer Node), entrypoint
-   `src/main.js`. Upload the contents of `functions/draw/` as the deployment
+   `ugly-sweater-draw`, runtime **Node 22** (Node 20 was not offered in the
+   console as of 2026-11-12; the code needs nothing version-specific),
+   entrypoint `src/main.js`. Upload the contents of `functions/draw/` as the deployment
    (the console installs dependencies from `package.json` during the build).
    The function ID is shown on the function page — copy it.
 3. **Set the function's variables** (Function → Settings → Variables):
