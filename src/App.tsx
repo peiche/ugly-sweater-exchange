@@ -231,7 +231,10 @@ export default function App() {
     clearMessages();
     setBusy(true);
     try {
-      const ex = await findExchangeByCode(joinCode);
+      // On the exchange page the code comes from the loaded exchange; on the
+      // home page it comes from the join field.
+      const code = joinCode || exchange?.joinCode || '';
+      const ex = await findExchangeByCode(code);
       if (!ex) throw new Error('No exchange found with that join code. Double-check the code and try again.');
       const existing = await listParticipants(ex.$id);
       const alreadyJoined = existing.find((p) => p.userId === userId);
@@ -465,6 +468,17 @@ export default function App() {
               </div>
               {isOrganizer && !exchange.drawn && (
                 <p className="muted">Share the code or invite link, wait for everyone to join, then draw names below.</p>
+              )}
+              {!myParticipant && !exchange.drawn && assignmentChecked && (
+                <form className="form" onSubmit={handleJoin}>
+                  <label>
+                    Your name
+                    <input value={joinName} onChange={(e) => setJoinName(e.target.value)} placeholder="e.g. Jessica" required maxLength={60} />
+                  </label>
+                  <button type="submit" className="btn primary" disabled={busy}>
+                    {busy ? 'Joining…' : 'Join this exchange'}
+                  </button>
+                </form>
               )}
               <p>
                 <button className="btn small" onClick={leaveExchange}>
