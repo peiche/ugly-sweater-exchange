@@ -211,8 +211,11 @@ export default function App() {
 
   const isOrganizer = exchange !== null && userId !== null && exchange.organizerUserId === userId;
   // The theme follows the open exchange; on the home page it follows the
-  // type picked in the create form, so the header previews the choice.
-  const activeTheme = themeOf(exchange?.exchangeType ?? (createType || undefined));
+  // type picked in the create form — and until one is picked, the header
+  // reads as the generic Gift Exchange.
+  const activeTheme = exchange
+    ? themeOf(exchange.exchangeType)
+    : themeOf(createType || 'gift-exchange');
 
   useEffect(() => {
     document.title = activeTheme.title;
