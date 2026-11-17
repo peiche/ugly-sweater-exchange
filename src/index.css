@@ -78,14 +78,16 @@ code { background: #f0e6d2; padding: 0.1rem 0.4rem; border-radius: 6px; }
 
 .form { display: flex; flex-direction: column; gap: 0.75rem; }
 .form label { display: flex; flex-direction: column; gap: 0.3rem; font-weight: bold; color: #4a3f33; }
-.form input {
+.form input,
+.form select {
   font: inherit;
   padding: 0.65rem 0.8rem;
   border: 2px solid #cbbfa5;
   border-radius: 10px;
   background: #fff;
 }
-.form input:focus { outline: 3px solid var(--gold); border-color: var(--green); }
+.form input:focus,
+.form select:focus { outline: 3px solid var(--gold); border-color: var(--green); }
 
 .btn {
   font: inherit;

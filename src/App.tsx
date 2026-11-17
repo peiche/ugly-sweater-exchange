@@ -13,7 +13,7 @@ import {
   resetDraw,
   runDraw,
 } from './appwrite';
-import type { Assignment, Exchange, Participant } from './types';
+import type { Assignment, Exchange, ExchangeType, Participant } from './types';
 
 function Snowfall() {
   const flakes = useMemo(
@@ -77,6 +77,34 @@ function codeFromLocation(): string {
   return new URLSearchParams(window.location.search).get('code')?.toUpperCase() ?? '';
 }
 
+/** The look and wording for each kind of exchange. */
+const EXCHANGE_THEMES: Record<ExchangeType, { label: string; emoji: string; title: string; matchLabel: string }> = {
+  'ugly-sweater': {
+    label: 'Ugly Sweater',
+    emoji: '🧶',
+    title: 'Ugly Sweater Exchange',
+    matchLabel: "You're buying an ugly sweater for",
+  },
+  'secret-santa': {
+    label: 'Secret Santa',
+    emoji: '🎅',
+    title: 'Secret Santa',
+    matchLabel: "You're Santa for",
+  },
+  'gift-exchange': {
+    label: 'Gift Exchange',
+    emoji: '🎁',
+    title: 'Gift Exchange',
+    matchLabel: "You're buying a gift for",
+  },
+};
+const EXCHANGE_TYPES = Object.keys(EXCHANGE_THEMES) as ExchangeType[];
+
+/** The theme for a type; exchanges created before the picker have no type and read as Ugly Sweater. */
+function themeOf(type?: ExchangeType | null) {
+  return EXCHANGE_THEMES[type ?? 'ugly-sweater'] ?? EXCHANGE_THEMES['ugly-sweater'];
+}
+
 export default function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState('');
@@ -100,6 +128,7 @@ export default function App() {
   const [joinName, setJoinName] = useState('');
   const [createName, setCreateName] = useState('');
   const [organizerName, setOrganizerName] = useState('');
+  const [createType, setCreateType] = useState<ExchangeType>('ugly-sweater');
   const [spendingLimit, setSpendingLimit] = useState('');
   const [exchangeDate, setExchangeDate] = useState('');
 
@@ -181,6 +210,13 @@ export default function App() {
   }, [exchange, userId, refresh]);
 
   const isOrganizer = exchange !== null && userId !== null && exchange.organizerUserId === userId;
+  // The theme follows the open exchange; on the home page it follows the
+  // type picked in the create form, so the header previews the choice.
+  const activeTheme = themeOf(exchange?.exchangeType ?? createType);
+
+  useEffect(() => {
+    document.title = activeTheme.title;
+  }, [activeTheme]);
   const shareUrl =
     exchange !== null
       ? `${window.location.origin}/exchange/${exchange.joinCode}`
@@ -213,6 +249,7 @@ export default function App() {
         exchangeDate,
         organizerUserId: userId,
         organizerName: organizerName.trim(),
+        exchangeType: createType,
       });
       // The organizer joins their own exchange automatically.
       await joinExchange({ exchangeId: ex.$id, name: organizerName.trim(), userId });
@@ -348,8 +385,8 @@ export default function App() {
     <div className="page">
       <Snowfall />
       <header className="hero">
-        <div className="sweater" aria-hidden="true">🧶</div>
-        <h1>Ugly Sweater Exchange</h1>
+        <div className="sweater" aria-hidden="true">{activeTheme.emoji}</div>
+        <h1>{activeTheme.title}</h1>
         <p className="tagline">
           Everyone visits on their own device. Everyone sees <strong>only</strong> who <em>they</em> got.
         </p>
@@ -384,12 +421,22 @@ export default function App() {
         {isConfigured && userId && !exchange && !restoring && (
           <>
             <section className="card">
-              <h2>🎄 Start a new exchange</h2>
+              <h2>{activeTheme.emoji} Start a new exchange</h2>
               <p className="muted">You&apos;re the organizer. Create it, share the join code, and draw the names once everyone&apos;s in.</p>
               <form onSubmit={handleCreate} className="form">
                 <label>
                   Exchange name
                   <input value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="e.g. Eiche Family Christmas" required maxLength={80} />
+                </label>
+                <label>
+                  What kind of exchange?
+                  <select value={createType} onChange={(e) => setCreateType(e.target.value as ExchangeType)}>
+                    {EXCHANGE_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {EXCHANGE_THEMES[t].emoji} {EXCHANGE_THEMES[t].label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label>
                   Your name
@@ -441,7 +488,7 @@ export default function App() {
         {isConfigured && userId && exchange && (
           <>
             <section className="card">
-              <h2>🎄 {exchange.name}</h2>
+              <h2>{activeTheme.emoji} {exchange.name}</h2>
               <p className="details">
                 {exchange.spendingLimit && <>Spending limit: <strong>{exchange.spendingLimit}</strong> · </>}
                 {exchange.exchangeDate && <>Exchange day: <strong>{exchange.exchangeDate}</strong> · </>}
@@ -495,7 +542,7 @@ export default function App() {
                     <h2>🎁 Your match</h2>
                     <p className="muted">Keep it secret — this is only visible on your device.</p>
                     <div className="match">
-                      <span className="match-label">You&apos;re buying an ugly sweater for</span>
+                      <span className="match-label">{activeTheme.matchLabel}</span>
                       <span className="match-name">🎄 {assignment.receiverName} 🎄</span>
                       {exchange.spendingLimit && (
                         <span className="match-limit">Spending limit: {exchange.spendingLimit}</span>
