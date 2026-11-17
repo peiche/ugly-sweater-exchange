@@ -128,7 +128,7 @@ export default function App() {
   const [joinName, setJoinName] = useState('');
   const [createName, setCreateName] = useState('');
   const [organizerName, setOrganizerName] = useState('');
-  const [createType, setCreateType] = useState<ExchangeType>('ugly-sweater');
+  const [createType, setCreateType] = useState<ExchangeType | ''>('');
   const [spendingLimit, setSpendingLimit] = useState('');
   const [exchangeDate, setExchangeDate] = useState('');
 
@@ -212,7 +212,7 @@ export default function App() {
   const isOrganizer = exchange !== null && userId !== null && exchange.organizerUserId === userId;
   // The theme follows the open exchange; on the home page it follows the
   // type picked in the create form, so the header previews the choice.
-  const activeTheme = themeOf(exchange?.exchangeType ?? createType);
+  const activeTheme = themeOf(exchange?.exchangeType ?? (createType || undefined));
 
   useEffect(() => {
     document.title = activeTheme.title;
@@ -240,6 +240,10 @@ export default function App() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!userId) return;
+    if (!createType) {
+      setError('Choose an exchange type first.');
+      return;
+    }
     clearMessages();
     setBusy(true);
     try {
@@ -430,7 +434,10 @@ export default function App() {
                 </label>
                 <label>
                   What kind of exchange?
-                  <select value={createType} onChange={(e) => setCreateType(e.target.value as ExchangeType)}>
+                  <select value={createType} onChange={(e) => setCreateType(e.target.value as ExchangeType)} required>
+                    <option value="" disabled>
+                      Choose a type…
+                    </option>
                     {EXCHANGE_TYPES.map((t) => (
                       <option key={t} value={t}>
                         {EXCHANGE_THEMES[t].emoji} {EXCHANGE_THEMES[t].label}
