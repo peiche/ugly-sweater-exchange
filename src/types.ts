@@ -20,6 +20,8 @@ export interface Participant extends Models.Document {
   name: string;
   userId: string;
   hasViewed: boolean;
+  /** Per-person preference (e.g. sweater size), entered when joining. Optional. */
+  preference?: string;
 }
 
 export interface Assignment extends Models.Document {
@@ -28,4 +30,6 @@ export interface Assignment extends Models.Document {
   giverName: string;
   receiverUserId: string;
   receiverName: string;
+  /** The receiver's preference, copied in by the draw function — only the giver can read this document. */
+  receiverPreference?: string;
 }

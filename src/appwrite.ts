@@ -106,6 +106,7 @@ export async function joinExchange(input: {
   exchangeId: string;
   name: string;
   userId: string;
+  preference: string;
 }): Promise<Participant> {
   return databases.createDocument<Participant>(
     config.databaseId,
@@ -116,6 +117,7 @@ export async function joinExchange(input: {
       name: input.name,
       userId: input.userId,
       hasViewed: false,
+      preference: input.preference || '',
     },
     [
       Permission.read(Role.any()),

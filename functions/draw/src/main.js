@@ -11,7 +11,10 @@
  * Actions (body: { exchangeId, action }):
  *   draw   — derange participants, write assignments, mark exchange drawn.
  *             Also clears any leftover assignments first (e.g. from the old
- *             client-side draw that failed halfway).
+ *             client-side draw that failed halfway). Each assignment also
+ *             carries the receiver's preference (e.g. sweater size), copied
+ *             from their participant record — that is how the giver sees it,
+ *             since the assignment is readable only by the giver.
  *   reset  — delete all assignments, mark exchange not drawn.
  *   delete — delete assignments + participants + the exchange itself.
  *
@@ -139,6 +142,9 @@ module.exports = async ({ req, res, log, error }) => {
           giverName: giver.name,
           receiverUserId: receiver.userId,
           receiverName: receiver.name,
+          // The receiver's preference travels with the assignment, so only
+          // the giver (the one user who can read this document) sees it.
+          receiverPreference: receiver.preference ?? '',
         },
         [
           // Secrecy lives here: only the assignee's anonymous user ID can read this.
