@@ -1,5 +1,5 @@
 import { Account, Client, Databases, Functions, ID, Permission, Query, Role } from 'appwrite';
-import type { Assignment, Exchange, Participant } from './types';
+import type { Assignment, Exchange, ExchangeType, Participant } from './types';
 
 function env(name: string): string {
   return (import.meta.env[name] as string | undefined)?.trim() ?? '';
@@ -68,6 +68,7 @@ export async function createExchange(input: {
   exchangeDate: string;
   organizerUserId: string;
   organizerName: string;
+  exchangeType: ExchangeType;
 }): Promise<Exchange> {
   const joinCode = makeJoinCode();
   return databases.createDocument<Exchange>(
@@ -81,6 +82,7 @@ export async function createExchange(input: {
       joinCode,
       organizerUserId: input.organizerUserId,
       organizerName: input.organizerName,
+      exchangeType: input.exchangeType,
       drawn: false,
     },
     [
@@ -104,6 +106,7 @@ export async function joinExchange(input: {
   exchangeId: string;
   name: string;
   userId: string;
+  preference: string;
 }): Promise<Participant> {
   return databases.createDocument<Participant>(
     config.databaseId,
@@ -114,6 +117,7 @@ export async function joinExchange(input: {
       name: input.name,
       userId: input.userId,
       hasViewed: false,
+      preference: input.preference || '',
     },
     [
       Permission.read(Role.any()),
