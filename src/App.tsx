@@ -134,6 +134,7 @@ export default function App() {
   const [organizerName, setOrganizerName] = useState('');
   const [createType, setCreateType] = useState<ExchangeType | ''>('');
   const [createPreference, setCreatePreference] = useState('');
+  const [joinAsParticipant, setJoinAsParticipant] = useState(true);
   const [spendingLimit, setSpendingLimit] = useState('');
   const [exchangeDate, setExchangeDate] = useState('');
 
@@ -263,8 +264,11 @@ export default function App() {
         organizerName: organizerName.trim(),
         exchangeType: createType,
       });
-      // The organizer joins their own exchange automatically.
-      await joinExchange({ exchangeId: ex.$id, name: organizerName.trim(), userId, preference: createPreference.trim() });
+      // The organizer joins their own exchange automatically, unless they
+      // chose not to participate.
+      if (joinAsParticipant) {
+        await joinExchange({ exchangeId: ex.$id, name: organizerName.trim(), userId, preference: createPreference.trim() });
+      }
       setExchange(ex);
       setNotice(`Exchange created! Share the join code ${ex.joinCode} with your family.`);
     } catch (err) {
@@ -463,15 +467,25 @@ export default function App() {
                 </label>
                 <hr className="form-divider" />
                 <h3 className="form-section">About you</h3>
-                <p className="muted form-section-note">You&apos;re joining your own exchange, so this is your info as a participant.</p>
+                <label className="checkbox-label">
+                  <input type="checkbox" checked={joinAsParticipant} onChange={(e) => setJoinAsParticipant(e.target.checked)} />
+                  I&apos;m joining this exchange too
+                </label>
+                {joinAsParticipant ? (
+                  <p className="muted form-section-note">You&apos;re joining your own exchange, so this is your info as a participant.</p>
+                ) : (
+                  <p className="muted form-section-note">You can join later from the exchange page if you change your mind.</p>
+                )}
                 <label>
                   Your name
                   <input value={organizerName} onChange={(e) => setOrganizerName(e.target.value)} placeholder="e.g. Paul" required maxLength={60} />
                 </label>
-                <label>
-                  Your preference (optional)
-                  <input value={createPreference} onChange={(e) => setCreatePreference(e.target.value)} placeholder={activeTheme.preferencePlaceholder} maxLength={100} />
-                </label>
+                {joinAsParticipant && (
+                  <label>
+                    Your preference (optional)
+                    <input value={createPreference} onChange={(e) => setCreatePreference(e.target.value)} placeholder={activeTheme.preferencePlaceholder} maxLength={100} />
+                  </label>
+                )}
                 <button type="submit" className="btn primary" disabled={busy}>
                   {busy ? 'Creating…' : 'Create exchange 🎁'}
                 </button>
