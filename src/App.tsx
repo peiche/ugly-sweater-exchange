@@ -458,16 +458,16 @@ export default function App() {
                   <input value={organizerName} onChange={(e) => setOrganizerName(e.target.value)} placeholder="e.g. Paul" required maxLength={60} />
                 </label>
                 <label>
+                  Your preference (optional)
+                  <input value={createPreference} onChange={(e) => setCreatePreference(e.target.value)} placeholder={activeTheme.preferencePlaceholder} maxLength={100} />
+                </label>
+                <label>
                   Spending limit (optional)
                   <input value={spendingLimit} onChange={(e) => setSpendingLimit(e.target.value)} placeholder="e.g. $25" maxLength={20} />
                 </label>
                 <label>
                   Exchange date (optional)
                   <input type="date" value={exchangeDate} onChange={(e) => setExchangeDate(e.target.value)} />
-                </label>
-                <label>
-                  Your preference (optional)
-                  <input value={createPreference} onChange={(e) => setCreatePreference(e.target.value)} placeholder={activeTheme.preferencePlaceholder} maxLength={100} />
                 </label>
                 <button type="submit" className="btn primary" disabled={busy}>
                   {busy ? 'Creating…' : 'Create exchange 🎁'}
