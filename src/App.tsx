@@ -433,7 +433,7 @@ export default function App() {
               <form onSubmit={handleCreate} className="form">
                 <label>
                   Exchange name
-                  <input value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="e.g. Eiche Family Christmas" required maxLength={80} />
+                  <input value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="e.g. Family Christmas" required maxLength={80} />
                 </label>
                 <label>
                   What kind of exchange?
