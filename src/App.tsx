@@ -463,7 +463,7 @@ export default function App() {
                 </label>
                 <hr className="form-divider" />
                 <h3 className="form-section">About you</h3>
-                <p className="muted form-section-note">You&apos;re joining your own exchange, so this is your info as a participant — not the exchange&apos;s settings.</p>
+                <p className="muted form-section-note">You&apos;re joining your own exchange, so this is your info as a participant.</p>
                 <label>
                   Your name
                   <input value={organizerName} onChange={(e) => setOrganizerName(e.target.value)} placeholder="e.g. Paul" required maxLength={60} />
